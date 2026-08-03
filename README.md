@@ -15,7 +15,7 @@ hypotheticals, no vendor pitch.
 | [Controls That Lie](controls-that-lie.md) | The dominant failure mode of agent infrastructure is a control that reports a value it doesn't have — found 10+ times in one audit. |
 | [Exit Codes for Unattended Jobs](exit-codes-for-unattended-jobs.md) | 0 = clean, 1 = findings, 2 = broken. Collapse the last two and you train yourself to ignore your own alerts. |
 | [Model Lifecycle for Agent Fleets](model-lifecycle.md) | Capability is a gate, not a weight; free-model churn rots any static chain in ~24h — and a bi-weekly drift review keeps the registry itself honest. |
-| Exec Policy Shapes | *(coming)* Reviewed automation beats both free-run and hard-deny; where interpreters belong and where they never do. |
+| [Exec Policy Shapes](exec-policy.md) | Reviewed automation beats both free-run and hard-deny — revised after independent external review (named-binary allowlists, accurate safeBins semantics, timeout-must-not-widen-authority). |
 
 ## The meta-point
 
