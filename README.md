@@ -1,28 +1,37 @@
 # Agentic Ops Playbooks
 
-Operational doctrine from running a real, single-operator agent gateway in
-production — model fleets, cron automation, exec policy, approval flows, and the
-failure modes none of the tutorials mention.
+> Operational doctrine from a real, single-operator agent gateway in production.  
+> Every defect documented here was found live, verified, and fixed. None are hypothetical.
 
-**Everything here was learned the expensive way.** Each playbook documents defects
-found live in a working deployment, verified, fixed, and re-verified. No
-hypotheticals, no vendor pitch.
+---
+
+The most dangerous thing in an agentic system is a control that believes it is working.
+
+These playbooks were distilled from auditing and operating a production Claude Code gateway — model fleets, scheduled automation, exec policy, approval flows, and the failure modes the tutorials don't cover. Each one starts from a real incident, names the defect class precisely, and ends with a countermeasure that survived contact with reality.
+
+The system that produced these docs runs its own follow-up drafts on a scheduled night shift — burning otherwise-idle subscription compute, delivering a morning digest for review. The docs about the machine are written by the machine, reviewed by the human. That loop is the actual product.
+
+---
 
 ## Playbooks
 
-| Doc | One-line thesis |
+| Playbook | The defect class |
 |---|---|
-| [Controls That Lie](controls-that-lie.md) | The dominant failure mode of agent infrastructure is a control that reports a value it doesn't have — found 10+ times in one audit. |
-| [Exit Codes for Unattended Jobs](exit-codes-for-unattended-jobs.md) | 0 = clean, 1 = findings, 2 = broken. Collapse the last two and you train yourself to ignore your own alerts. |
-| [Model Lifecycle for Agent Fleets](model-lifecycle.md) | Capability is a gate, not a weight; free-model churn rots any static chain in ~24h — and a bi-weekly drift review keeps the registry itself honest. |
-| [Exec Policy Shapes](exec-policy.md) | Reviewed automation beats both free-run and hard-deny — revised after independent external review (named-binary allowlists, accurate safeBins semantics, timeout-must-not-widen-authority). |
+| [Controls That Lie](controls-that-lie.md) | The dominant failure mode of agent infrastructure is a control that reports a value it doesn't have. Found 10+ times in one audit, independently, in components written months apart. |
+| [Exit Codes for Unattended Jobs](exit-codes-for-unattended-jobs.md) | `0 = clean · 1 = findings · 2 = broken`. Collapse the last two and you train the operator to stop reading red rows. Real crashes become invisible. |
+| [Model Lifecycle for Agent Fleets](model-lifecycle.md) | Capability is a gate, not a weight. Free-model churn rots any static chain in ~24h. A bi-weekly lineup drift review is the control that keeps the registry honest. |
+| [Exec Policy Shapes](exec-policy.md) | Reviewed automation beats both free-run and hard-deny. Named-binary allowlists, accurate `safeBins` semantics, `strictInlineEval`, and an `askFallback` that never widens authority on timeout. |
+| [Remote Control in Production](remote-control.md) | Remote Control can be silently killed by four independent env vars — each of which is routinely set in production gateway deployments. Knowing the kill list before you deploy is cheaper than diagnosing it after. |
 
-## The meta-point
+---
 
-The system that produced these docs drafts its own follow-ups on an overnight
-"night shift" — queued briefs burned against otherwise-idle subscription compute,
-with a morning digest. The docs about the machine are written by the machine,
-reviewed by the human. That loop is the actual product.
+## Why these exist
+
+Most documentation describes what a system does when everything works. These playbooks describe what a system does when something is quietly wrong — and how to find out before a downstream job acts on a verdict it was never given.
+
+The design principle behind all of them: **a control that has never fired is a hope, not a control.** Every playbook ends with a test that can be run.
+
+---
 
 ## License
 
