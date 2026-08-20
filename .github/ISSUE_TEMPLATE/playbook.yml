@@ -1,0 +1,59 @@
+name: New Playbook
+description: Propose a new ops playbook based on a real production incident
+title: "playbook: [defect class name]"
+labels: ["playbook-proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Playbooks here document real failures — not patterns that *could* exist.
+        Fill out every field. If you can't answer the "one-line test" yet, the playbook isn't ready.
+
+  - type: textarea
+    id: incident
+    attributes:
+      label: What did you observe?
+      description: Describe the actual failure as it appeared. Be specific — what did the system report vs. what was actually happening?
+      placeholder: "The dashboard said gated. Nothing was gated. Every audit read the policy that governed the delegated paths..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: defect-class
+    attributes:
+      label: What is the reusable defect class?
+      description: Name the pattern in a way that applies beyond your specific system. Would a reader recognize this failure in their own deployment?
+      placeholder: "A control that reports a value it doesn't have — configuration and enforcement live in different components and nothing forces them to agree."
+    validations:
+      required: true
+
+  - type: textarea
+    id: fix
+    attributes:
+      label: What fixed it?
+      description: What actually changed? Not what you planned to change — what you deployed and verified.
+    validations:
+      required: true
+
+  - type: input
+    id: test
+    attributes:
+      label: One-line test
+      description: A single command or action the reader can run right now to verify the control is working. A countermeasure that has never fired is a hope, not a control.
+      placeholder: "Attempt the forbidden action. Require the denial. If you don't get one, the gate doesn't exist."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: This incident actually happened — I observed it in production, not in a hypothetical or tutorial
+          required: true
+        - label: The defect class is general enough to recur in other agentic deployments
+          required: true
+        - label: The fix was deployed and verified, not just planned
+          required: true
+        - label: The one-line test can be run by someone who wasn't there
+          required: true

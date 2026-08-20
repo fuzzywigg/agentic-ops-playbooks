@@ -1,12 +1,58 @@
 # Remote Control in Production Agent Gateways
 
-*Field notes on deploying Claude Code Remote Control alongside an LLM gateway, cron fleet, and exec policy stack. The failure modes are specific and silent.*
+*The session was configured. The dashboard would have shown it connected. It was silently dead — killed by a variable set two months earlier for CI hygiene.*
+
+---
+
+## The defect
+
+Remote Control was enabled in the gateway's configuration. The feature had been tested. The docs said it worked. What nobody checked: `DISABLE_TELEMETRY` was set in the shell environment for an unrelated reason — it suppresses telemetry in CI pipelines, and someone had carried it over into the production session profile.
+
+`DISABLE_TELEMETRY` disables the feature-flag evaluation that Remote Control availability depends on. Remote Control does not log a warning. It does not emit a failure. It simply does not activate. The session starts, looks normal, and Remote Control is absent.
+
+This is the same defect class as [Controls That Lie](controls-that-lie.md) — a configuration that reports a value it doesn't have. The difference is that the kill comes from *outside* the feature, in variables set for reasons that have nothing to do with session management.
+
+---
+
+## The kill list
+
+Five independent variables can disable Remote Control. Each is routinely present in production gateway deployments for entirely unrelated reasons:
+
+| Variable | Why you have it | What it kills |
+|---|---|---|
+| `DISABLE_TELEMETRY` | CI hygiene, privacy posture | Feature-flag evaluation |
+| `DO_NOT_TRACK` | Same | Feature-flag evaluation |
+| `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | Airgapped or metered environments | Feature-flag evaluation |
+| `DISABLE_GROWTHBOOK` | Testing or stability | Feature-flag evaluation |
+| `ANTHROPIC_BASE_URL` | LLM gateway or proxy | Remote Control itself (v2.1.196+) |
+
+The first four kill via feature-flag evaluation. The fifth is more direct: if `ANTHROPIC_BASE_URL` points anywhere other than `api.anthropic.com`, Remote Control is disabled at the architectural level — it communicates directly with Anthropic's infrastructure and cannot be proxied.
+
+**The countermeasure is verification, not configuration.** Check for all five variables before deploying:
+
+```sh
+env | grep -E 'DISABLE|BASE_URL|DO_NOT_TRACK|GROWTHBOOK'
+```
+
+Then verify the capability itself: start a session, open `claude.ai/code` on a second device, confirm a session appears with a green dot. A configuration that has never produced a visible session is a story, not a configuration.
+
+---
+
+## LLM gateway deployments
+
+If your deployment routes Claude Code traffic through an intermediary (`ANTHROPIC_BASE_URL` set), Remote Control is unavailable on that host. The conflict is architectural, not a misconfiguration — there is no workaround.
+
+Options, stated plainly:
+
+- **Unset `ANTHROPIC_BASE_URL` for sessions where Remote Control matters.** The session uses direct Anthropic access; your gateway does not see that traffic.
+- **Accept the split.** Cron agents and gateway-routed sessions: no Remote Control. Interactive sessions: unset the variable, use direct access.
+- **Document the split explicitly.** The dangerous version is an implicit split that nobody has written down. Someone assumes Remote Control is available, it isn't, they discover it during an incident rather than during setup.
 
 ---
 
 ## What it is
 
-Remote Control connects `claude.ai/code` or the Claude mobile app to a Claude Code session running on your machine. The session stays local — your filesystem, MCP servers, tools, and project configuration all remain on the host. The web and mobile interfaces are a window into that local session, not a cloud handoff.
+Remote Control connects `claude.ai/code` or the Claude mobile app to a Claude Code session running on your machine. The session stays local — filesystem, MCP servers, tools, and project configuration all remain on the host. The web and mobile interfaces are a window into that local session, not a cloud handoff.
 
 Three invocation modes:
 
@@ -21,144 +67,81 @@ claude --remote-control
 /remote-control
 ```
 
-Server mode is the right shape for unattended or headless deployments. Interactive mode is the right shape when you want to hand off a session you started at your desk to your phone mid-task.
+Server mode is the right shape for unattended or headless deployments. Interactive mode is the right shape for handing off a session you started at your desk to your phone mid-task.
 
----
-
-## The kill list
-
-Remote Control can be silenced by four independent environment variables, each of which is routinely set in production deployments for entirely unrelated reasons:
-
-| Variable | Why you have it | What it kills |
-|---|---|---|
-| `DISABLE_TELEMETRY` | Privacy posture, CI hygiene | Feature-flag evaluation |
-| `DO_NOT_TRACK` | Same | Feature-flag evaluation |
-| `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | Airgapped or metered environments | Feature-flag evaluation |
-| `DISABLE_GROWTHBOOK` | Testing or stability | Feature-flag evaluation |
-| `ANTHROPIC_BASE_URL` | LLM gateway or proxy | Remote Control itself (as of v2.1.196) |
-
-The first four disable the feature-flag evaluation that Remote Control availability depends on. The fifth is more direct: if `ANTHROPIC_BASE_URL` points anywhere other than `api.anthropic.com`, Remote Control is disabled, full stop.
-
-This is the same defect class as [Controls That Lie](controls-that-lie.md) — a configuration that looks correct but silently removes a capability. The difference is that here the kill comes from *outside* the feature, in variables set for reasons that have nothing to do with session management.
-
-**The countermeasure is the same:** verify the capability, not the setting. After deploying a Remote Control configuration, test that a session actually appears in the session list. A config that has never produced a visible session is a story, not a configuration.
-
----
-
-## LLM gateway deployments
-
-If you run an LLM gateway or proxy — routing Claude Code traffic through an intermediary before it reaches Anthropic — `ANTHROPIC_BASE_URL` is set to your gateway's endpoint. As of Claude Code v2.1.196, this disables Remote Control entirely.
-
-The conflict is architectural: Remote Control communicates directly with Anthropic's infrastructure and cannot be proxied through a gateway. There is currently no supported way to use both simultaneously.
-
-Options:
-
-- **Unset `ANTHROPIC_BASE_URL` for sessions where Remote Control matters.** The session uses direct Anthropic access. Your gateway does not see that traffic.
-- **Accept the constraint.** For unattended cron work, Remote Control isn't needed — the approval channel via exec policy handles human-in-the-loop requirements. Remote Control is most valuable for interactive sessions you want to continue on another device.
-- **Document the split explicitly.** Cron agents and gateway-routed sessions: no Remote Control. Interactive dev sessions: unset the variable, use direct access. The crime is an implicit split that nobody has written down.
-
----
-
-## Server mode for unattended work
-
-`claude remote-control` in server mode stays running in your terminal, waiting for remote connections. It is the right shape when you want multiple concurrent sessions reachable from a single host:
+### Server mode flags
 
 ```bash
-# One-per-dir sessions (default)
-claude remote-control --spawn same-dir
-
-# Isolated git worktree per session
-claude remote-control --spawn worktree
-
-# Exactly one session, reject additional connections
-claude remote-control --spawn session
-
-# Named session, visible in the remote session list
-claude remote-control --name "Night Shift"
-
-# Cap concurrent sessions (default: 32)
-claude remote-control --capacity 8
+claude remote-control --name "Night Shift"          # visible session title
+claude remote-control --spawn worktree              # isolated git worktree per session
+claude remote-control --spawn session               # single session, reject additional
+claude remote-control --capacity 8                  # cap concurrent sessions (default: 32)
+claude remote-control --continue                    # resume last session from this directory
+claude remote-control --session-id <id>             # resume one session by ID
 ```
 
-For an unattended host running cron automation, `--spawn worktree` is the safest shape. Sessions that could conflict on the same files get isolated git worktrees automatically.
+`--spawn worktree` is the safest shape for unattended work — sessions that could conflict on the same files get isolated git worktrees automatically.
 
 ### Resume after restart
 
-When you stop the server with Ctrl+C, sessions stop responding remotely but are not archived. Resume them within four hours:
+Sessions survive a Ctrl+C restart for approximately four hours. Within that window:
 
 ```bash
-# Bring back all sessions from this directory
-claude remote-control
-
-# Bring back only the session the server started with
-claude remote-control --continue
-
-# Bring back one specific session by ID
-claude remote-control --session-id <id>
+claude remote-control           # bring back all sessions from this directory
+claude remote-control --continue    # bring back only the session the server started with
+claude remote-control --session-id <id>   # bring back one session by ID
 ```
 
-The session ID is the segment of the `claude.ai/code` session URL between `/code/` and any `?`.
-
-After four hours, the sessions are gone. Design for it: if continuity matters, use `--name` so the session is easy to find and reconnect manually.
+The session ID is the segment of the `claude.ai/code` URL between `/code/` and any `?`.
 
 ---
 
 ## Approval channel via phone
 
-Remote Control and exec policy are designed to work together. When `askFallback` routes an unapproved command to a human, the approval can be sent from the Claude app on your phone through the active Remote Control session. This closes the loop on the reviewed automation pattern without requiring the operator to be at a desk.
+Remote Control and exec policy compose. When `askFallback` routes an unapproved command to a human, the approval can be sent from the Claude app on your phone through the active Remote Control session. This closes the reviewed-automation loop without requiring the operator to be at a desk.
 
-The session must be active for this to work. If `ANTHROPIC_BASE_URL` is set or any kill-list variable is present, the phone approval path does not exist. Plan accordingly: cron agents that depend on human-in-the-loop approval need Remote Control reachable from the same host.
+This integration only exists when Remote Control is reachable. If `ANTHROPIC_BASE_URL` is set or any kill-list variable is present, the phone approval path is unavailable. For cron agents that depend on human-in-the-loop approval, Remote Control must be reachable from the same host — verify this during deployment, not during the first incident.
 
 ---
 
 ## Workspace trust
 
-Remote Control requires workspace trust. Run `claude` in your project directory at least once and accept the trust dialog before starting a Remote Control session.
-
-One specific gotcha: Claude Code's startup trust dialog never saves trust for your home directory. If you `cd ~` and run `claude remote-control`, trust fails. Always start Remote Control from a project directory.
+Run `claude` in your project directory at least once and accept the trust dialog before starting a Remote Control session. Claude Code's startup trust dialog never saves trust for the home directory — starting `claude remote-control` from `~` fails the trust check. Always start from a project directory.
 
 ---
 
 ## Auto-connect
 
-To activate Remote Control automatically on every interactive session:
-
 ```json
 // ~/.claude/settings.json
-{
-  "remoteControlAtStartup": true
-}
+{ "remoteControlAtStartup": true }
 ```
 
-Or via `/config` inside Claude Code → **Enable Remote Control for all sessions**.
+Or via `/config` → **Enable Remote Control for all sessions**.
 
-Project-level settings can *disable* auto-connect for a specific repo (set `false`) but cannot enable it (a `true` in `.claude/settings.json` is ignored for project/local scope, to prevent a checked-in file from enrolling everyone who opens the repository).
+Project-level `.claude/settings.json` can disable auto-connect for a specific repo (set `false`) but cannot enable it — a checked-in `true` is ignored, so a repo can't silently enroll everyone who opens it.
 
 ---
 
-## Requirements checklist
-
-Before relying on Remote Control in any deployment:
+## Requirements before deploying
 
 - [ ] Subscription is Pro, Max, Team, or Enterprise (API keys not supported)
-- [ ] Authenticated via `/login` — not API key
-- [ ] Not running on Bedrock, GCP Agent Platform, or Microsoft Foundry
-- [ ] `ANTHROPIC_BASE_URL` is unset or points to `api.anthropic.com`
-- [ ] `DISABLE_TELEMETRY`, `DO_NOT_TRACK`, `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`, `DISABLE_GROWTHBOOK` are all unset
+- [ ] Authenticated via `/login`, not API key
+- [ ] Not on Bedrock, GCP Agent Platform, or Microsoft Foundry
+- [ ] `ANTHROPIC_BASE_URL` unset or pointing to `api.anthropic.com`
+- [ ] `DISABLE_TELEMETRY`, `DO_NOT_TRACK`, `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`, `DISABLE_GROWTHBOOK` all unset
 - [ ] Workspace trust accepted from a project directory (not home)
-- [ ] On Team/Enterprise: Owner has enabled the Remote Control toggle in admin settings
-- [ ] Verified: a session actually appears in the session list after startup
+- [ ] On Team/Enterprise: Owner has enabled Remote Control in admin settings
+- [ ] **Verified: a session actually appears in the session list after startup**
 
-The last item is the only one that can't be faked by a setting.
+The last item is the only one that cannot be faked by a setting.
 
 ---
 
 ## The one-line test
 
-Start a Remote Control session. Open `claude.ai/code` on a second device. Confirm the session appears with a green dot.
-
-If it doesn't appear, work through the kill list. The most common culprits in a gateway deployment are `ANTHROPIC_BASE_URL` and `DISABLE_TELEMETRY`. Check `env | grep -E 'DISABLE|BASE_URL|DO_NOT_TRACK|GROWTHBOOK'` before assuming the feature is broken.
+Start a Remote Control session. Open `claude.ai/code` on a second device. Confirm the session appears with a green dot. If it doesn't, run `env | grep -E 'DISABLE|BASE_URL|DO_NOT_TRACK|GROWTHBOOK'` and work through the kill list.
 
 ---
 
-*Playbook version: 2026-08-19. Based on Remote Control v2.1.234+ documentation and production gateway deployment patterns.*
+*Playbook version: 2026-08-19. Defect class first observed in a gateway deployment where `DISABLE_TELEMETRY` was inherited from CI environment config.*

@@ -99,3 +99,9 @@ inherited the lie.
 
 For every control in your system, ask: *if this stopped working tonight, what would
 tell me?* If the answer is "nothing," you don't have a control. You have a story.
+
+*→ see also: [Remote Control in Production](remote-control.md) — a concrete instance of this class where the kill comes from an env var set for unrelated reasons, with no visible failure signal.*
+
+---
+
+*Playbook version: 2026-08-19. Based on a two-week audit of a single-owner agent deployment, 10+ instances of this defect class found independently.*

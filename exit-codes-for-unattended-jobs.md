@@ -72,3 +72,9 @@ Alert fatigue isn't caused by too many alerts. It's caused by alerts that don't
 mean anything. Three exit codes and a four-line shim make every red row mean
 "machinery broken" — and a red row that always means something is the cheapest
 observability upgrade an unattended fleet can get.
+
+*→ see also: [Night Shift Loop](night-shift.md) — the heartbeat convention that makes "loop ran, nothing to report" distinguishable from "loop stopped running."*
+
+---
+
+*Playbook version: 2026-08-19. Defect first found live: six scheduled audit jobs showing `last=error` daily, all working correctly, all exiting 1 by design.*
