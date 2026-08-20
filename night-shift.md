@@ -27,7 +27,11 @@ Each component has a failure mode. The dangerous ones are the ones that look lik
 
 ---
 
-## Failure modes
+## Anticipated failure modes
+
+These are pre-mortem, derived from the loop's design. None has been observed in this
+deployment yet; when one fires, it gets a specimen — a timestamp, a draft, a digest —
+and this section is updated.
 
 **The draft that passes on style but fails on substance.**  
 The loop has read the existing playbooks long enough to reproduce their voice. It knows the structure: defect class, specimens, countermeasures, one-line test. It can produce a document that looks like a playbook — and documents a hypothetical rather than a real incident. The style gate passes. The substance gate doesn't exist.
@@ -50,7 +54,7 @@ A loop that runs long enough against a stable corpus starts producing revisions 
 *Countermeasure:* Revisions to existing playbooks require an explicit flag in the draft header and a stated reason that references new evidence. A revision without new evidence is discarded at the delivery stage, before it reaches the morning digest.
 
 **The cron that silently stops.**  
-The scheduled turn fails — auth token expired, quota exhausted, harness error — and emits nothing. No draft, no error, no digest. The operator assumes the loop is running because nothing has broken visibly. This is the [exit-codes](exit-codes-for-unattended-jobs.md) defect class: "no output" and "ran successfully with nothing to report" are indistinguishable.
+The scheduled turn fails — auth token expired, quota exhausted, harness error — and emits nothing. No draft, no error, no digest. The operator assumes the loop is running because nothing has broken visibly. This is the same signal-collapse family as [exit-codes](exit-codes-for-unattended-jobs.md): two different states — "stopped" and "nothing to report" — produce the identical absence of signal, just as "found problems" and "crashed" produce the identical red row.
 
 *Countermeasure:* The loop has a heartbeat separate from its output. Even if no draft is produced, the morning digest includes a line: *loop ran, no draft generated, exit 0.* Silence is not a valid delivery. A loop that doesn't check in is considered stopped.
 
@@ -83,4 +87,4 @@ Check the delivery timestamp of the last morning digest. If it's more than 48 ho
 
 ---
 
-*Playbook version: 2026-08-19. Architecture description of the operating system for this repo. Updated as the loop itself evolves.*
+*Doctrine version: 2026-08-19. Architecture description of the operating system for this repo; failure modes are pre-mortem, not observed incidents. Updated as the loop itself evolves.*

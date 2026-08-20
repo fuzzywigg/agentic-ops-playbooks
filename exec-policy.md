@@ -4,12 +4,18 @@
 
 ---
 
+## The incidents this policy answers
+
+Two specimens from [Controls That Lie](controls-that-lie.md) motivated this shape, both observed live. The main agent's shell tool ran outside the exec approval chain that governed every delegated path — every audit of "what can the agent execute" read the policy that governed subagents and concluded the system was locked down, while the main path had no lock. And of two config files, the reassuring one was wrong: the host approvals file said `full` while the merged runtime policy was `allowlist`, so which file you opened first determined what you believed. The policy below exists so that what runs is what the audit says runs.
+
+---
+
 ## The decision space
 
 When an AI agent can run shell commands, you have three broad options:
 
 1. **Full freerun** — anything runs, no review. Fast, simple, and dangerous at scale.
-2. **Hard deny** — nothing runs without explicit per-call approval. Safe, but jobs waiting on approval do not hang indefinitely — approvals can be async, expire, or terminate as denied.
+2. **Hard deny** — nothing runs without explicit per-call approval. Safe, but every unattended job stalls on a human who may not be there — throughput dies at scale, and expired approvals terminate work as denied.
 3. **Reviewed automation** — an allowlist of trusted binaries runs freely; misses go through a review pipeline before reaching a human; unattended jobs have a defined fallback when the human is unavailable.
 
 This document argues for the third option and explains the specific levers that make it work.
@@ -148,4 +154,12 @@ Name trusted binaries explicitly with `argPattern` where arguments matter, keep 
 
 ---
 
-*Playbook version: v2, 2026-08-03. Incorporates external review corrections applied 2026-08-02.*
+## The one-line test
+
+From an unattended agent scope, run your allowlisted interpreter with `-c 'print(1)'`
+and require the escalation event. If it runs freely, `strictInlineEval` is not
+actually in force — the policy you audited is not the policy that runs.
+
+---
+
+*Doctrine version: 2026-08-19. Distilled from incidents documented in [Controls That Lie](controls-that-lie.md); v2 (2026-08-03) incorporated external review corrections applied 2026-08-02; this revision adds the incident grounding and the closing test.*

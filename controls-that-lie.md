@@ -97,10 +97,11 @@ inherited the lie.
 
 ## The one-line test
 
-For every control in your system, ask: *if this stopped working tonight, what would
-tell me?* If the answer is "nothing," you don't have a control. You have a story.
+Pick the control you trust most. Attempt the thing it forbids — right now — and
+require an observable denial within one minute. If nothing denies you and nothing
+alerts, you don't have a control. You have a story.
 
-*→ see also: [Remote Control in Production](remote-control.md) — a concrete instance of this class where the kill comes from an env var set for unrelated reasons, with no visible failure signal.*
+*→ see also: [Remote Control in Production](remote-control.md) — a cousin of this class: five env vars set for unrelated reasons disable the feature, and the error is emitted to a terminal nobody watches.*
 
 ---
 

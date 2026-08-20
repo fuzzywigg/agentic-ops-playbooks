@@ -104,6 +104,8 @@ A discovery or registry scan that modifies the configuration it is reading creat
 
 Mutation belongs in promotion, which requires the full pipeline plus human ratification. Discovery is read-only.
 
+*→ see also: [Controls That Lie](controls-that-lie.md) — the specimen "the discovery job that mutated what it observed" is this incident; snapshot-and-diff around anything that "only reads" is how you prove discovery stayed read-only.*
+
 ---
 
 ## Operational reality: free-model churn
@@ -129,8 +131,6 @@ The goal is not a large model pool. It is a current, tested, honest answer to wh
 
 ---
 
-*Playbook version: 2026-07-29. Based on production evidence collected 2026-07-26 through 2026-07-28.*
-
 ## The cadence that keeps it honest (owner review addendum)
 
 A registry that runs but is never read reverts to being a story. The failure mode isn't
@@ -144,3 +144,16 @@ lineup drift review** — a scheduled, delivered report answering three question
 
 A registry whose eligible set hasn't changed in a month is more likely broken than
 stable. The review exists to catch exactly that.
+
+---
+
+## The one-line test
+
+Pull the registry's last-seen timestamp for every model in the live fallback chain.
+Any timestamp older than one discovery-scan interval means discovery is dead and the
+chain is running on stale evidence. An eligible set unchanged for a month is more
+likely a broken pipeline than a stable landscape.
+
+---
+
+*Playbook version: 2026-08-19. Based on production evidence collected 2026-07-26 through 2026-07-28; owner-review addendum (bi-weekly drift review) folded above the version line and closing test added 2026-08-19.*

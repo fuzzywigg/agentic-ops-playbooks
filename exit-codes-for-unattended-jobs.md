@@ -62,9 +62,6 @@ Conflating them is the original sin.
 - **Timeouts are 2, not 1.** A probe that timed out learned nothing. Recording
   it as a finding poisons your data with verdicts you never reached. (Same rule
   as capability probing: a transport error is not a capability verdict.)
-- **Test the mapping live.** Force-run the job once, confirm the scheduler shows
-  success *and* the findings arrived in the delivery channel. A shim that has
-  never fired is — say it with me — a story, not a control.
 
 ## Why so small a thing matters
 
@@ -72,6 +69,12 @@ Alert fatigue isn't caused by too many alerts. It's caused by alerts that don't
 mean anything. Three exit codes and a four-line shim make every red row mean
 "machinery broken" — and a red row that always means something is the cheapest
 observability upgrade an unattended fleet can get.
+
+## The one-line test
+
+Force-run one audit job that exits 1. Confirm the scheduler shows green *and*
+the findings arrived in the delivery channel. A shim that has never fired is —
+say it with me — a story, not a control.
 
 *→ see also: [Night Shift Loop](night-shift.md) — the heartbeat convention that makes "loop ran, nothing to report" distinguishable from "loop stopped running."*
 
