@@ -110,7 +110,7 @@ Mutation belongs in promotion, which requires the full pipeline plus human ratif
 
 ## Operational reality: free-model churn
 
-Free lanes on aggregated providers change fast. Of 15 free models available at a given scan, at least one may be flagged for retirement within 24 hours. Of 18 tracked models in an early registry, only 13 demonstrated any capability at all, and two actively misreported their own.
+Free lanes on aggregated providers change fast. Of 18 tracked models in an early registry, only 13 demonstrated any capability at all, and two actively misreported their own.
 
 A registry that tracks when each model was first seen and when it was last seen is the cheapest possible hedge against this. The scarce thing is not access to models — it is a current, evidence-backed answer to which models can actually do the work. Static configuration answers this once. A live registry answers it every day.
 
