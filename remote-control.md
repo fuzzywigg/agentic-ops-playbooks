@@ -1,8 +1,12 @@
 # Remote Control in Production Agent Gateways
 
-*Pre-mortem. How a Remote Control session dies in an unattended deployment: the error goes to a terminal nobody watches, and the only remotely visible symptom is an absence. No production incident is claimed — every behavior below is documented Claude Code behavior, confirmable by the one-line test.*
+*Early June 2026: a session that should have been serving remotely was simply absent from the claude.ai/code session list. The kill: `DISABLE_TELEMETRY`, sitting forgotten in the operator's own shell profile. The error that named the problem had no reader.*
 
 ---
+
+## The incident
+
+Early June 2026. A Remote Control session was expected in the claude.ai/code session list and wasn't there — no failed row, no error state, just absence. The trace ended in the operator's own shell profile: `DISABLE_TELEMETRY`, set earlier and forgotten. Ordinary profile cruft — not CI tooling, not gateway config. The variable has nothing to do with session management, and nothing about it looked related to Remote Control until the trace landed on it.
 
 ## The defect class
 
@@ -10,7 +14,7 @@ Five environment variables disable Remote Control. None of them exists for sessi
 
 The failure is not silent at the source. Claude Code emits a named error: `claude remote-control` checks eligibility and errors out at startup rather than serving a dead session, and an interactive session shows a failure notification shortly after launch. Since v2.1.154 the message — "Remote Control requires feature-flag evaluation" — names the exact variable Claude Code found; before that it was the generic "Remote Control is not yet enabled for your account." `claude doctor` shows which individual eligibility check failed.
 
-The defect class is **a failure signal with no consumer**. In an unattended deployment the error lands on stderr of a host nobody is watching, the launcher swallows it or restarts, and the only symptom visible from anywhere else is an absence: the session never appears at claude.ai/code. The signal existed; the pipeline had no consumer for it. This is a cousin of [Controls That Lie](controls-that-lie.md) — not a control reporting a value it doesn't have, but a correct report delivered where nobody reads.
+The defect class is **a failure signal with no consumer**. Whatever Claude Code printed at startup in the incident above, nobody read it — the absence from the session list was the first signal anyone consumed. In an unattended deployment the error lands on stderr of a host nobody is watching, the launcher swallows it or restarts, and the only symptom visible from anywhere else is an absence: the session never appears at claude.ai/code. The signal existed; the pipeline had no consumer for it. This is a cousin of [Controls That Lie](controls-that-lie.md) — not a control reporting a value it doesn't have, but a correct report delivered where nobody reads.
 
 ---
 
@@ -18,13 +22,13 @@ The defect class is **a failure signal with no consumer**. In an unattended depl
 
 | Variable | Why you have it | What it kills | Provenance |
 |---|---|---|---|
-| `DISABLE_TELEMETRY` | CI hygiene, privacy posture | Feature-flag evaluation | documented behavior |
-| `DO_NOT_TRACK` | Same | Feature-flag evaluation | documented behavior |
+| `DISABLE_TELEMETRY` | CI hygiene, privacy posture, profile cruft | Feature-flag evaluation | observed live, early June 2026 |
+| `DO_NOT_TRACK` | Privacy posture | Feature-flag evaluation | documented behavior |
 | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | Airgapped or metered environments | Feature-flag evaluation | documented behavior |
 | `DISABLE_GROWTHBOOK` | Testing or stability | Feature-flag evaluation | documented behavior |
 | `ANTHROPIC_BASE_URL` | LLM gateway or proxy | Remote Control itself (v2.1.196+) | documented behavior |
 
-None of these rows comes from an incident in this deployment; each is documented Claude Code behavior. Confirm any of them with the one-line test.
+One row is the incident above; the other four are documented Claude Code behavior, not observed here. Confirm any of them with the one-line test.
 
 One more location the table can't show: these variables also kill Remote Control when set in the `env` block of any `settings.json` file — managed, user (`~/.claude/settings.json`), project, or local — where a shell `env | grep` will never see them.
 
@@ -149,4 +153,4 @@ If it doesn't: read the startup output or the failure notification — since v2.
 
 ---
 
-*Doctrine version: 2026-08-19. Behavior verified against the Remote Control documentation (v2.1.234+); no production incident is claimed. Rewritten after an adversarial review found the original incident framing constructed and its silent-failure claim false.*
+*Playbook version: 2026-08-23. Incident observed early June 2026: session absent from claude.ai/code, `DISABLE_TELEMETRY` found in the operator's shell profile. Promoted from the 2026-08-19 pre-mortem once the owner supplied the specimen; behavior reference verified against the Remote Control documentation (v2.1.234+).*

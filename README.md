@@ -21,7 +21,7 @@ The system that produced these docs runs its own follow-up drafts on a scheduled
 | [Exit Codes for Unattended Jobs](exit-codes-for-unattended-jobs.md) | incident | `0 = clean · 1 = findings · 2 = broken`. Collapse the last two and you train the operator to stop reading red rows. Real crashes become invisible. |
 | [Model Lifecycle for Agent Fleets](model-lifecycle.md) | incident | Capability is a gate, not a weight. Free-model churn rots any static chain in ~24h. A bi-weekly lineup drift review is the control that keeps the registry honest. |
 | [Exec Policy Shapes](exec-policy.md) | doctrine | Reviewed automation beats both free-run and hard-deny. Named-binary allowlists, accurate `safeBins` semantics, `strictInlineEval`, and an `askFallback` that never widens authority on timeout. Grounded in the exec-bypass specimens from Controls That Lie. |
-| [Remote Control in Production](remote-control.md) | pre-mortem | Five env vars — set for CI hygiene, privacy, testing, or gateway routing — disable Remote Control. The error is emitted to a terminal nobody watches; the defect class is a failure signal with no consumer. |
+| [Remote Control in Production](remote-control.md) | incident | Five env vars — set for CI hygiene, privacy, testing, or gateway routing — disable Remote Control. Observed live: a session absent from the list, killed by a forgotten shell-profile variable. The defect class is a failure signal with no consumer. |
 | [The Night Shift Loop](night-shift.md) | pre-mortem | A system that writes documentation about itself has specific anticipated failure modes: drafts that pass on style but fail on substance, a review backlog that goes unread, a context that cites its own unreviewed output as ground truth. |
 
 ---
