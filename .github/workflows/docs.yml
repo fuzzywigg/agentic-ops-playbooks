@@ -22,3 +22,36 @@ jobs:
           # primary truth, so CI verifies relative targets only.
           args: --offline --no-progress --include-fragments -- './**/*.md'
           fail: true
+
+  required-files:
+    name: required playbook files
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert known playbook markdown files exist and are non-empty
+        run: |
+          set -euo pipefail
+          files=(
+            README.md
+            CLAUDE.md
+            controls-that-lie.md
+            exec-policy.md
+            exit-codes-for-unattended-jobs.md
+            model-lifecycle.md
+            night-shift.md
+            remote-control.md
+          )
+          for f in "${files[@]}"; do
+            if [[ ! -f "$f" ]]; then
+              echo "::error file=$f::missing required playbook file"
+              exit 1
+            fi
+            if [[ ! -s "$f" ]]; then
+              echo "::error file=$f::required playbook file is empty"
+              exit 1
+            fi
+            bytes=$(wc -c < "$f" | tr -d ' ')
+            echo "ok: $f ($bytes bytes)"
+          done
+          echo "hygiene: checked ${#files[@]} required playbook files"

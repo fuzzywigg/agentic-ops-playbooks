@@ -39,7 +39,7 @@ The design principle behind all of them: **a control that has never fired is a h
 
 ## Checks
 
-Pull requests run a thin docs workflow (`.github/workflows/docs.yml`) that verifies relative markdown links offline. No app build — this repo is Markdown only.
+Pull requests run a thin docs workflow (`.github/workflows/docs.yml`) that verifies relative markdown links offline and asserts the known playbook markdown files exist and are non-empty. No app build — this repo is Markdown only.
 
 Cloud Agents use `.cursor/environment.json` (no dependency install).
 
